@@ -28,3 +28,28 @@
 | Sub-Shell | `` `$()` `` | `%24%28%29` | `Both` *(Linux-only)* |
 ```
 
+# Injection Operators — Quick Reference
+
+Below is a compact Markdown table of common operators/payload fragments used in various injection classes (SQL, LDAP, XSS, SSRF, XXE, etc.). Use this as a reference when testing or hardening input-handling.
+
+> **Warning:** These strings can be dangerous when executed in vulnerable systems — use only in authorized testing environments.
+
+| Injection Type                            | Common Operators / Fragments                             |    |
+| ----------------------------------------- | -------------------------------------------------------- | -- |
+| SQL Injection                             | `'`, `;`, `--`, `/* */`                                  |    |
+| Command Injection                         | `;`, `&&`                                                |    |
+| LDAP Injection                            | `*`, `(`, `)`, `&`, ``                                   | `` |
+| XPath Injection                           | `'`, `or`, `and`, `not`, `substring`, `concat`, `count`  |    |
+| OS Command Injection                      | `;`, `&`, ``                                             | `` |
+| Code Injection                            | `'`, `;`, `--`, `/* */`, `$()`, `${}`, `#{}`, `%{}`, `^` |    |
+| Directory Traversal / File Path Traversal | `../`, `..\\`, `%00`                                     |    |
+| Object Injection                          | `;`, `&`, ``                                             | `` |
+| XQuery Injection                          | `'`, `;`, `--`, `/* */`                                  |    |
+| Shellcode Injection                       | `\x`, `\u`, `%u`, `%n`                                   |    |
+| Header Injection                          | `\n`, `\r\n`, `\t`, `%0d`, `%0a`, `%09`                  |    |
+
+If you’d like, I can:
+
+* Export this as a downloadable Markdown file,
+* Expand the table with example payloads for each injection type, or
+* Add mitigation notes and detection tips for each row. Which would help you most?
